@@ -42,4 +42,4 @@ jobs:
  #   uses: ./.github/workflows/deploy-db.yml
  #   with:
  #     environment: ${{ needs.simulate.outputs.env }}
-      image_tag: ${{ needs.simulate.outputs.tag }}
+ #     image_tag: ${{ needs.simulate.outputs.tag }}
