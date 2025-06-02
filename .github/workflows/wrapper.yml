@@ -1,0 +1,35 @@
+name: Wrapper Workflow
+
+on:
+  workflow_dispatch:  # Manually triggered for testing
+
+jobs:
+  simulate-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulate ADO JSON
+        id: simulate
+        run: |
+          cat <<EOF > request.json
+          {
+            "env": "dev",
+            "image_tag": "v1.2.3",
+            "service": "deploy-app"
+          }
+          EOF
+
+      - name: Parse JSON
+        id: parse
+        run: |
+          ENV=$(jq -r '.env' request.json)
+          TAG=$(jq -r '.image_tag' request.json)
+          SERVICE=$(jq -r '.service' request.json)
+          echo "env=$ENV" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "service=$SERVICE" >> $GITHUB_OUTPUT
+
+      - name: Call reusable workflow dynamically
+        uses: ./.github/workflows/${{ steps.parse.outputs.service }}.yml
+        with:
+          environment: ${{ steps.parse.outputs.env }}
+          image_tag: ${{ steps.parse.outputs.tag }}
