@@ -1,14 +1,15 @@
-name: Wrapper Workflow
-
 on:
-  workflow_dispatch:  # Manually triggered for testing
+  workflow_dispatch:
 
 jobs:
-  simulate-and-dispatch:
+  simulate:
     runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.parse.outputs.env }}
+      tag: ${{ steps.parse.outputs.tag }}
+      service: ${{ steps.parse.outputs.service }}
     steps:
-      - name: Simulate ADO JSON
-        id: simulate
+      - name: Simulate JSON
         run: |
           cat <<EOF > request.json
           {
@@ -21,15 +22,22 @@ jobs:
       - name: Parse JSON
         id: parse
         run: |
-          ENV=$(jq -r '.env' request.json)
-          TAG=$(jq -r '.image_tag' request.json)
-          SERVICE=$(jq -r '.service' request.json)
-          echo "env=$ENV" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "service=$SERVICE" >> $GITHUB_OUTPUT
+          echo "env=$(jq -r .env request.json)" >> $GITHUB_OUTPUT
+          echo "tag=$(jq -r .image_tag request.json)" >> $GITHUB_OUTPUT
+          echo "service=$(jq -r .service request.json)" >> $GITHUB_OUTPUT
 
-      - name: Call reusable workflow dynamically
-        uses: ./.github/workflows/${{ steps.parse.outputs.service }}.yml
-        with:
-          environment: ${{ steps.parse.outputs.env }}
-          image_tag: ${{ steps.parse.outputs.tag }}
+  call-app:
+    needs: simulate
+    if: ${{ needs.simulate.outputs.service == 'deploy-app' }}
+    uses: ./.github/workflows/reusable_build.yml
+    with:
+      environment: ${{ needs.simulate.outputs.env }}
+      image_tag: ${{ needs.simulate.outputs.tag }}
+
+  call-db:
+    needs: simulate
+    if: ${{ needs.simulate.outputs.service == 'deploy-db' }}
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: ${{ needs.simulate.outputs.env }}
+      image_tag: ${{ needs.simulate.outputs.tag }}
