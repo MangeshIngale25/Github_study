@@ -36,10 +36,10 @@ jobs:
       environment: ${{ needs.simulate.outputs.env }}
       image_tag: ${{ needs.simulate.outputs.tag }}
 
-  call-db:
-    needs: simulate
-    if: ${{ needs.simulate.outputs.service == 'deploy-db' }}
-    uses: ./.github/workflows/deploy-db.yml
-    with:
-      environment: ${{ needs.simulate.outputs.env }}
+ # call-db:
+ #   needs: simulate
+ #   if: ${{ needs.simulate.outputs.service == 'deploy-db' }}
+ #   uses: ./.github/workflows/deploy-db.yml
+ #   with:
+ #     environment: ${{ needs.simulate.outputs.env }}
       image_tag: ${{ needs.simulate.outputs.tag }}
